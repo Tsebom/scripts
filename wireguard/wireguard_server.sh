@@ -4,16 +4,18 @@
 sudo apt update
 sudo apt upgrade
 
-INTERFACE=()
-
 # get array of interface
 function getInterface {
+	local arr=()
 	for iface in $(ifconfig | cut -d ' ' -f1 | tr ':' '\n' | awk NF)
 	do
-		INTERFACE+=("$iface")
+		arr+=("$iface")
 	done
+
+	echo ${arr[@]}
 }
 
+# create menu for selection 
 function menu {
 	local arr=($1)
 	local message+="$2"
@@ -28,14 +30,13 @@ function menu {
 	message+="\n"
 	printf "${message}"
 
-	read -p "Enter selection [0 - ${#arr[@]}] > "
+	read -p "Enter selection [1-${#arr[@]}] > "
 
-	if [["$REPLY" =~ ^[1 - ${#arr[@]}]$]]; then
-		echo "Your selection is $REPLY"
+	if [["$REPLY" =~ ^[1-${#arr[@]}]$]]; then
+		menuResult="${arr[$(($REPLY - 1))]}"
 	else
 		echo "Your selection is not correct"
 	fi
-
 }
 
 # install wireguard
@@ -46,5 +47,7 @@ sudo wg genkey | tee /etc/wireguard/privatekey | wg pubkey | tee /etc/wireguard/
 sudo chmod 600 /etc/wireguard/privatekey
  
 # get a list of interface and display a selection menu
-getInterface
-menu "$(echo ${INTERFACE[@]})" "Plase choose the interface:\n\n"
+menu "$(getInterface)" "Plase choose the interface:\n\n"
+# assign the result of the interface selection to the variable INTERFACE
+INTERFACE=$menuResult 
+
