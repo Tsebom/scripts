@@ -39,10 +39,18 @@ function menu {
 	fi
 }
 
+# write to file ($1= string, $2= path file)
+function write {
+		local string=$1
+		local path=$2
+
+		echo "$string" >> "$path"
+}
+
 # install wireguard
 sudo apt install -y wireguard
 # generate server key
-sudo wg genkey | tee /etc/wireguard/privatekey | wg pubkey | tee /etc/wireguard/publickey
+sudo wg genkey | sudo tee /etc/wireguard/privatekey | sudo wg pubkey | sudo tee /etc/wireguard/publickey
 # permit to privatekey
 sudo chmod 600 /etc/wireguard/privatekey
  
@@ -51,3 +59,12 @@ menu "$(getInterface)" "Plase choose the interface:\n\n"
 # assign the result of the interface selection to the variable INTERFACE
 INTERFACE=$menuResult 
 
+# create config file wg-server.conf
+sudo touch /etc/wireguard/wg-server.conf
+
+write "[Interface]
+PrivateKey = '$(cat /etc/wireguard/privatekey)'
+Address = 10.0.0.1/24
+ListenPort = 51830
+PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o $INTERFACE -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o $INTERFACE -j MASQUERADE" "/etc/wireguard/wg-server.conf"
