@@ -12,6 +12,8 @@ MY_USER="tsebom"
 # Добавляем юзера и включаем его в группу sudo
 adduser $MY_USER
 sudo adduser $MY_USER sudo $MY_USER
+touch /etc/sudoers.d/$MY_USER-config
+echo -e "$MY_USER ALL=(ALL) ALL" | sudo tee -a /etc/sudoers.d/$MY_USER-config
 
 # Создаем свой конфигурационный фаил ssh
 touch /etc/ssh/sshd_config.d/01-$MY_USER-init.conf

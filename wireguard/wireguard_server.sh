@@ -3,7 +3,6 @@
 
 #----------VARIABLES----------
 
-HOSTNAME=$hostname # Hostname
 INTERFACE="" # server's interface
 SERVER_IP="" # ip address server
 WGS_KEY="" # server's private key 
@@ -12,6 +11,7 @@ WGS_PORT="" # port is listened on by wg server
 WG_ADDR="" # ip address wireguard's network
 CONFIG_FILE="" # config file's name
 
+MY_USER="tsebom"
 flag="server"
 loop=1
 
@@ -34,8 +34,8 @@ function menu {
 	local message=$2
 	
 	while [ $loop -gt 0 ]
-	local i=1
 	do
+		local i=1
 		for item in ${arr[@]}
 		do
 			message+="$i. $item\n"
@@ -83,10 +83,10 @@ function addPeer {
 	local port=$6
 	local serv_conf=$7
 
-	sudo wg genkey | sudo tee /etc/wireguard/cliemts_key/${name}_privatekey | sudo wg pubkey | sudo tee /etc/wireguard/cliemts_key/${name}_publickey
-	local key=$(cat /etc/wireguard/cliemts_key/${name}_privatekey)
-	sudo rm /etc/wireguard/cliemts_key/${name}_privatekey
-	local pubkey=$(cat /etc/wireguard/cliemts_key/${name}_publickey)
+	sudo wg genkey | sudo tee /etc/wireguard/clients_key/${name}_privatekey | sudo wg pubkey | sudo tee /etc/wireguard/clients_key/${name}_publickey
+	local key=$(cat /etc/wireguard/clients_key/${name}_privatekey)
+	sudo rm /etc/wireguard/clients_key/${name}_privatekey
+	local pubkey=$(cat /etc/wireguard/clients_key/${name}_publickey)
 	local peer="#${name}\n[Peer]\nPublicKey = ${pubkey}\nAllowedIPs = ${wgip%.*}.${number}/32"
 
 	write "${peer}" "/etc/wireguard/${serv_conf}.conf"
@@ -96,7 +96,7 @@ function addPeer {
 
 	local client="[Interface]\nPrivateKey = ${key}\nAddress = ${wgip%.*}.${number}/32\nDNS = 8.8.8.8\n\n[Peer]\nPublicKey = ${server_pubkey}\nEndpoint = ${server_ip}:${port}\nAllowedIPs = 0.0.0.0/0\nPersistentKeepalive = 20\n"
 
-	write "${client}" "/etc/wireguard/cliemts_conf/${name}.conf"
+	write "${client}" "/etc/wireguard/clients_conf/${name}.conf"
 }
 
 #----------ACTIONS----------
@@ -113,8 +113,15 @@ echo "SERVER_IP = $SERVER_IP"
 if [ ! -d "/etc/wireguard" ]; then 
 	# create directories for wireguard
 	sudo mkdir /etc/wireguard
-	sudo mkdir /etc/wireguard/cliemts_key
-	sudo mkdir /etc/wireguard/cliemts_conf
+	sudo mkdir /etc/wireguard/clients_key
+	sudo mkdir /etc/wireguard/clients_conf
+else
+	if [ ! -d "/etc/wireguard/clients_key" ]; then
+		sudo mkdir /etc/wireguard/clients_key
+	fi
+	if [ ! -d "/etc/wireguard/clients_conf" ]; then
+		sudo mkdir /etc/wireguard/clients_conf
+	fi
 fi
 
 # assign value for flag variable
@@ -135,7 +142,7 @@ CONFIG_FILE=$REPLY
 
 # ..................SERVER..................
 
-if [ $flag="server" ]; then
+if [ $flag = "server" ]; then
 	
 	sudo touch /etc/wireguard/$CONFIG_FILE.conf
 	sudo chmod 600 /etc/wireguard/$CONFIG_FILE.conf
@@ -174,21 +181,21 @@ fi
 
 # ...................PEER...................
 
-if [ $flag="peer" ]; then
+if [ $flag = "peer" ]; then
 
 WG_ADDR=$(sudo awk 'BEGIN{FS=" = "} /Address/{print $2}' /etc/wireguard/$CONFIG_FILE.conf)
 WGS_PUB=$(sudo cat /etc/wireguard/$CONFIG_FILE-publickey)
 WGS_PORT=$(sudo awk 'BEGIN{FS=" = "} /ListenPort/{print $2}' /etc/wireguard/$CONFIG_FILE.conf)
 
-	while [ $loop -gt 0]
+	while [ $loop -gt 0 ] 
 	do
-		local i=$(sudo awk 'BEGIN{peer=0} /Peer/{peer++} END{print peer}' /etc/wireguard/$CONFIG_FILE.conf)
+		i=$(sudo awk 'BEGIN{peer=0} /Peer/{peer++} END{print peer}' /etc/wireguard/$CONFIG_FILE.conf)
 		getInfo "Type peer's name"
 		addPeer $infoResult $(( i + 2 )) $WG_ADDR $WGS_PUB $SERVER_IP $WGS_PORT $CONFIG_FILE
 
-		menu "yes no" "Do you want to add another peer?"
-		if [ $menuResult="no" ]; then
-			loop=1
+		menu "yes no" "Do you want to add another peer?\n"
+		if [ $menuResult = "no" ]; then
+			loop=0
 		fi
 	done
 fi
@@ -196,4 +203,9 @@ fi
 sudo systemctl restart wg-quick@$CONFIG_FILE.service
 sudo wg show
 
-echo -e "\nДля скачивания файлов конфигурации используйте команду:\n\tscp -rO tsebom@${SERVER_IP}:/etc/wireguard/cliemts_conf/ ~/${HOSTNAME}/"
+sudo -u $MY_USER mkdir /home/$MY_USER/upload
+sudo cp -r /etc/wireguard/clients_conf /home/$MY_USER/upload
+
+echo -e "\nДля скачивания файлов конфигурации используйте команду:\n\tscp -rO tsebom@${SERVER_IP}:~/upload/ ~/<DIRECTORY>/"
+
+reboot
