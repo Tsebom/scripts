@@ -162,10 +162,15 @@ else
 	chmod +x /etc/init.d/getdomains
 	ln -sf ../init.d/getdomains /etc/rc.d/S99getdomains
 
-	echo "0 */8 * * * /etc/init.d/getdomains start" >> /etc/crontabs/root
+	#crontab configuration
+	echo "0 */8 * * * /etc/init.d/getdomains start" >> /etc/crontabs/root # chack domains list
+	echo "30 5 * * 0 sleep 70 && touch /etc/banner && reboot" >> /etc/crontabs/root # reboot router
 	/etc/init.d/cron enable
 	/etc/init.d/cron start
+	/etc/init.d/cron restart
 
 	service network restart
 	service getdomains start
+
+	reboot
 fi
