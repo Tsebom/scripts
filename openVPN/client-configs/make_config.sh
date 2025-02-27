@@ -2,9 +2,9 @@
 
 # First argument: Client identifier
 
-KEY_DIR=~/client-configs/keys
+KEY_DIR=~/client-configs/keys # В данной директории должен лежать файлы ca.crt, <CLIENT_NAMES>.key, <CLIENTS_NAMES>.crt 
 OUTPUT_DIR=~/client-configs/files
-BASE_CONFIG=~/client-configs/base.conf
+BASE_CONFIG=~/client-configs/base.conf # В файле заменить SERVER_IP_ADDRESS на ip свего сервера
 
 cat ${BASE_CONFIG} \
     <(echo -e '\n<ca>') \
