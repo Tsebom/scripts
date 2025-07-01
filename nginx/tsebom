@@ -1,0 +1,60 @@
+server {
+    listen 80;
+    server_name tsebom.ru www.tsebom.ru;
+
+    # Редирект HTTP → HTTPS
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl; # managed by Certbot
+    server_name tsebom.ru www.tsebom.ru;
+
+    # SSL сертификаты
+    ssl_certificate /etc/letsencrypt/live/tsebom.ru/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/tsebom.ru/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+    # HSTS (HTTP Strict Transport Security)
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;" always;
+
+    root /var/www/;
+
+    location / {
+        alias /var/www/home/;
+        index index.html;
+        try_files $uri $uri.html $uri/ =404;
+    }
+
+    location /super_girl {
+        alias /var/www/super_girl/;
+        index index.html;
+        try_files $uri $uri.html $uri/ =404;
+    }
+
+    location /leasing {
+        alias /var/www/leasing/;
+        index index.html;
+        try_files $uri $uri.html $uri/ =404;
+    }
+
+    location /tesla {
+        alias /var/www/tesla/;
+        index index.html;
+        try_files $uri $uri.html $uri/ =404;
+    }
+
+    location /ink.house {
+        alias /var/www/ink.house/;
+        index index.html;
+        try_files $uri $uri.html $uri/ =404;
+    }
+}

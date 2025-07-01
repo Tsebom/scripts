@@ -1,0 +1,28 @@
+* text=auto eol=lf
+
+# force text
+*.html text
+*.js text
+*.scss text
+*.svg text
+*.json text
+*.php text
+
+*.conf text
+
+# Windows files (need CRLF)
+*.sln text eol=crlf
+*.bat eol=crlf
+
+# Unix files (need LF)
+*.sh eol=lf
+
+# binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
