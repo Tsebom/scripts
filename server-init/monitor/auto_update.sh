@@ -11,18 +11,24 @@ ERR_FILE="/var/log/update-errors.log"
 DATE=$(date +'%a %b %d %T %Z %Y')
 STATUS=0
 
-# create file if not exist
-if [ ! -f $LOG_FILE ]; then
-	touch $LOG_FILE
-	chown :sudo $LOG_FILE
-	chmod 760 $LOG_FILE
-fi
+telegram() {
+	local message="$1"
 
-if [ ! -f $ERR_FILE ]; then
-	touch $ERR_FILE
-	chown :sudo $ERR_FILE
-	chmod 760 $ERR_FILE
-fi
+	curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+	-d chat_id="$CHAT_ID" \
+	-d text="$message" \
+	-d parse_mode="Markdown" \
+	> /dev/null
+}
+
+# create file if not exist
+for FILE in "$LOG_FILE" "$ERR_FILE"; do
+  if [ ! -f "$FILE" ]; then
+    touch "$FILE"
+    chown :sudo "$FILE"
+    chmod 760 "$FILE"
+  fi
+done
 
 # get upgrade
 {
@@ -33,10 +39,10 @@ apt-get autoremove -y || STATUS=1
 apt-get autoclean || STATUS=1
 echo "========== [$DATE] Update finished =========="
 echo ""
-} > $LOG_FILE 2>$ERR_FILE
+} > "$LOG_FILE" 2>"$ERR_FILE"
 
 # get result
-if [ $STATUS -eq 0 ];then
+if [ "$STATUS" -eq 0 ];then
 		result_update=$(grep -E '[0-9]+ upgraded, [0-9]+ newly installed, [0-9]+ to remove and [0-9]+ not upgraded' "$LOG_FILE" | \
 		head -n 1 | \
 		awk -F'(,| and )' '
@@ -49,14 +55,17 @@ if [ $STATUS -eq 0 ];then
 	
 	TEXT=$(printf "✅ %s server update succeeded:\n%s\nCalculating upgrade:\n%s" "$HOSTNAME" "$DATE" "$result_update")
 else
-	TEXT=$(printf "❌ %s server update Error:\n%s\nLog file:\n%s" \
+	LOG_SNIPPET=$(tail -n 30 "$ERR_FILE")
+	TEXT=$(printf "❌ %s server update Error:\n%s\nLog file:\n```\n%s\n```" \
     "$HOSTNAME" \
     "$DATE" \
-    "$(cat "$ERR_FILE")")
+    "$LOG_SNIPPET")
 fi
 
-curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
-	-d chat_id="$CHAT_ID" \
-	-d text="$TEXT" \
-	-d parse_mode="Markdown" \
-	> /dev/null
+telegram "$TEXT"
+
+if [ -f /var/run/reboot-required ]; then
+	TEXT=$(printf "⚙️ %s restart required, rebooting now..." "$HOSTNAME")
+	telegram "$TEXT"
+  shutdown -r now
+fi
