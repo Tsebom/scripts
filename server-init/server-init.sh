@@ -89,6 +89,7 @@ apt update -y && apt upgrade -y
 apt install curl -y
 apt install tree -y
 apt install unzip -y
+apt install rsync -y
 apt install wireguard -y # wireguard
 apt install qrencode -y # QR-code
 apt-get install iptables-persistent -y # Устанавливаем iptables-persistent для сохранения настроек iptables
