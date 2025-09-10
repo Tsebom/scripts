@@ -109,9 +109,9 @@ touch /etc/monitor.conf
 chmod 600 /etc/monitor.conf
 chown root:root /etc/monitor.conf
 
-read -p "Type the TOKEN for your telegram monitor bot" TOKEN
+read -p "Type the TOKEN for your telegram monitor bot: " TOKEN
 echo "TOKEN=$TOKEN" >> /etc/monitor.conf 2>/dev/null
-read -p "Type your chat_id"  CHAT_ID
+read -p "Type your chat_id: "  CHAT_ID
 echo "CHAT_ID=$CHAT_ID" >> /etc/monitor.conf 2>/dev/null
 
 # add auto_update.sh
@@ -132,7 +132,7 @@ systemctl restart ssh
 #---------------REBOOT------------------------
 
 echo -e "${GREEN}Настройка завершена.${NC}"
-echo -e "${GREEN}Сервер будет перезагружен...${NC}"
+echo -e "${GREEN}Сервер необходимо перезагрузить...${NC}"
 sleep 3
 read -p "Перезагрузить сервер сейчас? [y/N]: " confirm
 [[ $confirm =~ ^[yY]$ ]] && reboot
