@@ -11,6 +11,8 @@ RED='\033[0;31m' # ANSI red
 GREEN='\033[0;32m' # ANSI green
 NC='\033[0m' # no color
 
+TIMEZONE="Europe/Saratov"
+
 #-------------CHECKING------------------------
 
 if [[ $EUID -ne 0 ]]; then
@@ -93,6 +95,10 @@ apt install rsync -y
 apt install wireguard -y # wireguard
 apt install qrencode -y # QR-code
 apt-get install iptables-persistent -y # Устанавливаем iptables-persistent для сохранения настроек iptables
+
+#------------TIMEZONE-------------------------
+
+timedatectl set-timezone "$TIMEZONE"
 
 #------------DOCKER---------------------------
 
