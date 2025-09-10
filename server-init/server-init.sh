@@ -94,6 +94,28 @@ apt install wireguard -y # wireguard
 apt install qrencode -y # QR-code
 apt-get install iptables-persistent -y # Устанавливаем iptables-persistent для сохранения настроек iptables
 
+#------------DOCKER---------------------------
+
+# Установка зависимостей
+apt install apt-transport-https ca-certificates gnupg lsb-release -y
+
+# Добавление GPG ключа Docker
+curl -fsSL https://download.docker.com/linux/$(. /etc/os-release && echo "$ID")/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# Добавление официального репозитория Docker
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/$(. /etc/os-release && echo "$ID") \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Установка Docker
+apt update -y
+apt install docker-ce docker-ce-cli containerd.io docker-compose-plugin -y
+
+# Добавляем пользователя в группу docker
+usermod -aG docker $MY_USER
+systemctl enable docker
+systemctl start docker
+
 #------------FIREWALL-------------------------
 
 # Настраиваем firewall
