@@ -8,12 +8,10 @@ source /etc/monitor.conf
 USER_NAME=$PAM_USER
 REMOTE_HOST=$PAM_RHOST
 
-LOGIN_TIME=$(date +'%a %b %d %T %Z %Y')
+LOGIN_TIME=$(date +'%T %a %d %b %Y')
 
 # set the message
-MESSAGE="🔐 User *$USER_NAME* logged in to the server *$HOSTNAME*.
-📅 Время: $LOGIN_TIME
-🌐 Хост: $REMOTE_HOST"
+MESSAGE=$(printf "🔐 User %s logged in to the server %s.\n📅 Time:\n%s\n🌐 Host:\n%s" "$USER_NAME" "$HOSTNAME" "$LOGIN_TIME" "$REMOTE_HOST")
 
 curl -s -X POST https://api.telegram.org/bot$TOKEN/sendMessage \
 	-d chat_id="$CHAT_ID" \

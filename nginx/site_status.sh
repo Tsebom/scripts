@@ -5,7 +5,7 @@
 
 source /etc/monitor.conf
 
-DATE=$(date +'%a %b %d %T %Z %Y')
+DATE=$(date +'%T %a %d %b %Y')
 WEBSITE="tsebom.ru"
 
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://$WEBSITE)
