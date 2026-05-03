@@ -1,7 +1,9 @@
 #!/bin/bash
 # Первоначальная настройка сервера
 # Перед применением убедиться что есть в наличии ключи ssh
-# В папку со скриптом необходимо положить файл публичного ключа ssh "id_rsa.pub" 
+# В папку со скриптом необходимо положить файл публичного ключа ssh "id_rsa.pub"
+# scp -r /path/to/local/folder user@server:/path/to/remote/
+
 
 set -e  # Прерывать выполнение при ошибках
 
@@ -21,7 +23,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 if [[ ! -f ./id_rsa.pub ]] || [[ ! -f monitor/login_telegram_notify.sh ]] || [[ ! -f monitor/auto_update.sh ]]; then
-    echo "${RED}Warning: Файл id_rsa.pub или login_telegram_notify.sh или auto_update.sh не найден!${NC}"
+    echo "${RED}Warning: Файл id_rsa.pub или login_telegram_notify.debian.sh или auto_update.sh не найден!${NC}"
     exit 1
 fi
 
@@ -88,13 +90,13 @@ EOF
 apt update -y && apt upgrade -y
 
 # Устанавливаем пакет
+apt install ufw -y
 apt install curl -y
 apt install tree -y
 apt install unzip -y
 apt install rsync -y
 apt install wireguard -y # wireguard
 apt install qrencode -y # QR-code
-apt-get install iptables-persistent -y # Устанавливаем iptables-persistent для сохранения настроек iptables
 
 #------------TIMEZONE-------------------------
 
@@ -124,12 +126,8 @@ systemctl start docker
 
 #------------FIREWALL-------------------------
 
-# Настраиваем firewall
-iptables -A INPUT -i lo -j ACCEPT
-iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-iptables -A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
-iptables -A INPUT -j DROP
-netfilter-persistent save # Сохранение настроек iptables
+ufw allow ssh # Доступ для ssh
+ufw enable # firewall on
 
 #-----------TELEGRAM_BOTS---------------------
 
@@ -146,9 +144,9 @@ echo "CHAT_ID=$CHAT_ID" >> /etc/monitor.conf 2>/dev/null
 cp monitor/auto_update.sh /usr/local/bin/auto_update.sh
 chmod 755 /usr/local/bin/auto_update.sh
 chown root:root /usr/local/bin/auto_update.sh
-(crontab -l 2>/dev/null; echo "0 5 * * 3,6 /usr/local/bin/auto_update.sh") | crontab -
+sudo crontab -l 2>/dev/null | { cat; echo "0 5 * * 3,6 /usr/local/bin/auto_update.sh"; } | sudo crontab -
 
-# add login_telegram_notify.sh
+# add login_telegram_notify.sh (PAM-версия для Debian)
 cp monitor/login_telegram_notify.sh /usr/local/bin/login_telegram_notify.sh
 chmod 755 /usr/local/bin/login_telegram_notify.sh
 chown root:root /usr/local/bin/login_telegram_notify.sh
