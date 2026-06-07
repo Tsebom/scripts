@@ -22,8 +22,8 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-if [[ ! -f ./id_rsa.pub ]] || [[ ! -f monitor/login_telegram_notify.sh ]] || [[ ! -f monitor/auto_update.sh ]]; then
-    echo "${RED}Warning: Файл id_rsa.pub или login_telegram_notify.sh или auto_update.sh не найден!${NC}"
+if [[ ! -f monitor/login_telegram_notify.sh ]] || [[ ! -f monitor/auto_update.sh ]]; then
+    echo "${RED}Warning: Файл login_telegram_notify.sh или auto_update.sh не найден!${NC}"
     exit 1
 fi
 
@@ -97,7 +97,18 @@ if [[ ! -d /home/$MY_USER/.ssh ]]; then
 	chown $MY_USER:$MY_USER /home/$MY_USER/.ssh
 fi
 
-cp id_rsa.pub /home/$MY_USER/.ssh/authorized_keys
+while true; do
+	read -s -p "Paste your public SSH key: " SSH_PUBLIC_KEY
+	echo
+	# Проверка: поле не пустое
+	if [[ -z "$SSH_PUBLIC_KEY" ]]; then
+		echo -e "${RED}Warning: Публичный SSH-ключ не может быть пустым.${NC}"
+		continue
+	fi
+	break
+done
+
+echo "$SSH_PUBLIC_KEY" > /home/$MY_USER/.ssh/authorized_keys
 chmod 600 /home/$MY_USER/.ssh/authorized_keys
 chown $MY_USER:$MY_USER /home/$MY_USER/.ssh/authorized_keys
 
