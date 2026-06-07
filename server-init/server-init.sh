@@ -23,7 +23,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 if [[ ! -f ./id_rsa.pub ]] || [[ ! -f monitor/login_telegram_notify.sh ]] || [[ ! -f monitor/auto_update.sh ]]; then
-    echo "${RED}Warning: Файл id_rsa.pub или login_telegram_notify.debian.sh или auto_update.sh не найден!${NC}"
+    echo "${RED}Warning: Файл id_rsa.pub или login_telegram_notify.sh или auto_update.sh не найден!${NC}"
     exit 1
 fi
 
