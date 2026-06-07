@@ -27,6 +27,33 @@ if [[ ! -f ./id_rsa.pub ]] || [[ ! -f monitor/login_telegram_notify.sh ]] || [[ 
     exit 1
 fi
 
+#-------------HOSTNAME------------------------
+
+while true; do
+	read -p "Please choose a hostname: " HOSTNAME
+	# Проверка: поле не пустое
+	if [[ -z "$HOSTNAME" ]]; then
+		echo -e "${RED}Warning: Имя хоста не может быть пустым.${NC}"
+		continue
+	fi
+
+	# Проверка: соответствует шаблону
+	if [[ ! "$HOSTNAME" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]]; then
+		echo -e "${RED}Warning: Неверный формат имени хоста.${NC}"
+		echo -e "${RED}Допустимы только буквы, цифры и '-'. Имя не должно начинаться или заканчиваться на '-'. Длина: 2-63 символа.${NC}"
+		continue
+	fi
+
+	break
+done
+
+hostnamectl set-hostname "$HOSTNAME"
+if grep -qE '^127\.0\.1\.1[[:space:]]+' /etc/hosts; then
+	sed -i -E "s/^127\.0\.1\.1[[:space:]]+.*/127.0.1.1\t$HOSTNAME/" /etc/hosts
+else
+	echo -e "127.0.1.1\t$HOSTNAME" >> /etc/hosts
+fi
+
 #-------------ADDUSER-------------------------
 
 while true; do
@@ -135,7 +162,7 @@ touch /etc/monitor.conf
 chmod 600 /etc/monitor.conf
 chown root:root /etc/monitor.conf
 
-read -p "Type the TOKEN for your telegram monitor bot: " TOKEN
+read -s -p "Type the TOKEN for your telegram monitor bot: " TOKEN
 echo "TOKEN=$TOKEN" >> /etc/monitor.conf 2>/dev/null
 read -p "Type your chat_id: "  CHAT_ID
 echo "CHAT_ID=$CHAT_ID" >> /etc/monitor.conf 2>/dev/null
@@ -144,12 +171,14 @@ echo "CHAT_ID=$CHAT_ID" >> /etc/monitor.conf 2>/dev/null
 cp monitor/auto_update.sh /usr/local/bin/auto_update.sh
 chmod 755 /usr/local/bin/auto_update.sh
 chown root:root /usr/local/bin/auto_update.sh
-sudo crontab -l 2>/dev/null | { cat; echo "0 5 * * 3,6 /usr/local/bin/auto_update.sh"; } | sudo crontab -
+sudo crontab -l 2>/dev/null | grep -qxF "0 5 * * 3,6 /usr/local/bin/auto_update.sh" || \
+( sudo crontab -l 2>/dev/null; echo "0 5 * * 3,6 /usr/local/bin/auto_update.sh" ) | sudo crontab -
 
 # add login_telegram_notify.sh (PAM-версия для Debian)
 cp monitor/login_telegram_notify.sh /usr/local/bin/login_telegram_notify.sh
 chmod 755 /usr/local/bin/login_telegram_notify.sh
 chown root:root /usr/local/bin/login_telegram_notify.sh
+grep -qxF "session optional pam_exec.so type=open_session /usr/local/bin/login_telegram_notify.sh" /etc/pam.d/sshd || \
 echo "session optional pam_exec.so type=open_session /usr/local/bin/login_telegram_notify.sh" >> /etc/pam.d/sshd
 
 # Перезапускаем  ssh
