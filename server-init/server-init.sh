@@ -182,8 +182,10 @@ echo "CHAT_ID=$CHAT_ID" >> /etc/monitor.conf 2>/dev/null
 cp monitor/auto_update.sh /usr/local/bin/auto_update.sh
 chmod 755 /usr/local/bin/auto_update.sh
 chown root:root /usr/local/bin/auto_update.sh
-sudo crontab -l 2>/dev/null | grep -qxF "0 5 * * 3,6 /usr/local/bin/auto_update.sh" || \
-( sudo crontab -l 2>/dev/null; echo "0 5 * * 3,6 /usr/local/bin/auto_update.sh" ) | sudo crontab -
+systemctl enable cron
+systemctl start cron
+crontab -l 2>/dev/null | grep -qxF "0 5 * * 3,6 /usr/local/bin/auto_update.sh" || \
+( crontab -l 2>/dev/null; echo "0 5 * * 3,6 /usr/local/bin/auto_update.sh" ) | crontab -
 
 # add login_telegram_notify.sh (PAM-версия для Debian)
 cp monitor/login_telegram_notify.sh /usr/local/bin/login_telegram_notify.sh
