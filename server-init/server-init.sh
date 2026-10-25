@@ -1,7 +1,7 @@
 #!/bin/bash
 # Первоначальная настройка сервера
 # Перед применением убедиться что есть в наличии ключи ssh
-# В папку со скриптом необходимо положить файл публичного ключа ssh "id_rsa.pub" 
+# scp -r /path/to/local/folder user@server:/path/to/remote/
 
 set -e  # Прерывать выполнение при ошибках
 
@@ -11,6 +11,8 @@ RED='\033[0;31m' # ANSI red
 GREEN='\033[0;32m' # ANSI green
 NC='\033[0m' # no color
 
+TIMEZONE="Europe/Saratov"
+
 #-------------CHECKING------------------------
 
 if [[ $EUID -ne 0 ]]; then
@@ -18,9 +20,36 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-if [[ ! -f ./id_rsa.pub ]] || [[ ! -f monitor/login_telegram_notify.sh ]] || [[ ! -f monitor/auto_update.sh ]]; then
-    echo "${RED}Warning: Файл id_rsa.pub или login_telegram_notify.sh или auto_update.sh не найден!${NC}"
+if [[ ! -f monitor/login_telegram_notify.sh ]] || [[ ! -f monitor/auto_update.sh ]]; then
+    echo "${RED}Warning: Файл login_telegram_notify.sh или auto_update.sh не найден!${NC}"
     exit 1
+fi
+
+#-------------HOSTNAME------------------------
+
+while true; do
+	read -p "Please choose a hostname: " HOSTNAME
+	# Проверка: поле не пустое
+	if [[ -z "$HOSTNAME" ]]; then
+		echo -e "${RED}Warning: Имя хоста не может быть пустым.${NC}"
+		continue
+	fi
+
+	# Проверка: соответствует шаблону
+	if [[ ! "$HOSTNAME" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]]; then
+		echo -e "${RED}Warning: Неверный формат имени хоста.${NC}"
+		echo -e "${RED}Допустимы только буквы, цифры и '-'. Имя не должно начинаться или заканчиваться на '-'. Длина: 2-63 символа.${NC}"
+		continue
+	fi
+
+	break
+done
+
+hostnamectl set-hostname "$HOSTNAME"
+if grep -qE '^127\.0\.1\.1[[:space:]]+' /etc/hosts; then
+	sed -i -E "s/^127\.0\.1\.1[[:space:]]+.*/127.0.1.1\t$HOSTNAME/" /etc/hosts
+else
+	echo -e "127.0.1.1\t$HOSTNAME" >> /etc/hosts
 fi
 
 #-------------ADDUSER-------------------------
@@ -66,7 +95,18 @@ if [[ ! -d /home/$MY_USER/.ssh ]]; then
 	chown $MY_USER:$MY_USER /home/$MY_USER/.ssh
 fi
 
-cp id_rsa.pub /home/$MY_USER/.ssh/authorized_keys
+while true; do
+	read -s -p "Paste your public SSH key: " SSH_PUBLIC_KEY
+	echo
+	# Проверка: поле не пустое
+	if [[ -z "$SSH_PUBLIC_KEY" ]]; then
+		echo -e "${RED}Warning: Публичный SSH-ключ не может быть пустым.${NC}"
+		continue
+	fi
+	break
+done
+
+echo "$SSH_PUBLIC_KEY" > /home/$MY_USER/.ssh/authorized_keys
 chmod 600 /home/$MY_USER/.ssh/authorized_keys
 chown $MY_USER:$MY_USER /home/$MY_USER/.ssh/authorized_keys
 
@@ -86,13 +126,17 @@ EOF
 apt update -y && apt upgrade -y
 
 # Устанавливаем пакет
+apt install ufw -y
 apt install curl -y
 apt install tree -y
 apt install unzip -y
 apt install rsync -y
 apt install wireguard -y # wireguard
 apt install qrencode -y # QR-code
-apt-get install iptables-persistent -y # Устанавливаем iptables-persistent для сохранения настроек iptables
+
+#------------TIMEZONE-------------------------
+
+timedatectl set-timezone "$TIMEZONE"
 
 #------------DOCKER---------------------------
 
@@ -118,12 +162,8 @@ systemctl start docker
 
 #------------FIREWALL-------------------------
 
-# Настраиваем firewall
-iptables -A INPUT -i lo -j ACCEPT
-iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-iptables -A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
-iptables -A INPUT -j DROP
-netfilter-persistent save # Сохранение настроек iptables
+ufw allow ssh # Доступ для ssh
+ufw enable # firewall on
 
 #-----------TELEGRAM_BOTS---------------------
 
@@ -131,7 +171,7 @@ touch /etc/monitor.conf
 chmod 600 /etc/monitor.conf
 chown root:root /etc/monitor.conf
 
-read -p "Type the TOKEN for your telegram monitor bot: " TOKEN
+read -s -p "Type the TOKEN for your telegram monitor bot: " TOKEN
 echo "TOKEN=$TOKEN" >> /etc/monitor.conf 2>/dev/null
 read -p "Type your chat_id: "  CHAT_ID
 echo "CHAT_ID=$CHAT_ID" >> /etc/monitor.conf 2>/dev/null
@@ -140,12 +180,16 @@ echo "CHAT_ID=$CHAT_ID" >> /etc/monitor.conf 2>/dev/null
 cp monitor/auto_update.sh /usr/local/bin/auto_update.sh
 chmod 755 /usr/local/bin/auto_update.sh
 chown root:root /usr/local/bin/auto_update.sh
-(crontab -l 2>/dev/null; echo "0 5 * * 3,6 /usr/local/bin/auto_update.sh") | crontab -
+systemctl enable cron
+systemctl start cron
+crontab -l 2>/dev/null | grep -qxF "0 5 * * 3,6 /usr/local/bin/auto_update.sh" || \
+( crontab -l 2>/dev/null; echo "0 5 * * 3,6 /usr/local/bin/auto_update.sh" ) | crontab -
 
-# add login_telegram_notify.sh
+# add login_telegram_notify.sh (PAM-версия для Debian)
 cp monitor/login_telegram_notify.sh /usr/local/bin/login_telegram_notify.sh
 chmod 755 /usr/local/bin/login_telegram_notify.sh
 chown root:root /usr/local/bin/login_telegram_notify.sh
+grep -qxF "session optional pam_exec.so type=open_session /usr/local/bin/login_telegram_notify.sh" /etc/pam.d/sshd || \
 echo "session optional pam_exec.so type=open_session /usr/local/bin/login_telegram_notify.sh" >> /etc/pam.d/sshd
 
 # Перезапускаем  ssh

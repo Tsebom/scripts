@@ -8,7 +8,7 @@ source /etc/monitor.conf
 LOG_FILE="/var/log/update-output.log"
 ERR_FILE="/var/log/update-errors.log"
 
-DATE=$(date +'%a %b %d %T %Z %Y')
+DATE=$(date +'%T %a %d %b %Y')
 STATUS=0
 
 telegram() {

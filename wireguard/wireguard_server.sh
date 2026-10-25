@@ -271,4 +271,4 @@ echo -e "${GREEN}\nДля скачивания файлов конфигурац
 
 
 read -p "Restart server now? [y/N]: " confirm
-[[ "$confirm" =~ ^[yY]$ ]] && reboot
+[[ "$confirm" =~ ^[yY]$ ]] && sudo reboot
