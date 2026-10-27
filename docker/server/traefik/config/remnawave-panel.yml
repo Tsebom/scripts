@@ -1,7 +1,7 @@
 http:
   routers:
     remnawave:
-      rule: "Host(`${REMNAWAVE_DOMAIN}`)"
+      rule: 'Host(`{{ env "REMNAWAVE_DOMAIN" }}`)'
       entrypoints:
         - https
       tls:

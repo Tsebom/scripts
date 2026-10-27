@@ -1,7 +1,7 @@
 http:
   routers:
     dashboard:
-      rule: "Host(`${DASHBOARD_DOMAIN}`)"
+      rule: 'Host(`{{ env "DASHBOARD_DOMAIN" }}`)'
       entryPoints:
         - https
       service: api@internal
@@ -14,4 +14,4 @@ http:
     dashboard-auth:
       basicAuth:
         users:
-          - "${AUTH_DASHBOARD}"
+          - '{{ env "AUTH_DASHBOARD" }}'
