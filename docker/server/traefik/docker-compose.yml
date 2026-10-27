@@ -20,7 +20,6 @@ services:
             - ./letsencrypt:/letsencrypt
             - ./config:/config:ro
             - ./logs:/var/log/traefik
-
 networks:
     remnawave-network:
         name: remnawave-network
