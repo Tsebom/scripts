@@ -14,8 +14,8 @@ services:
             - .env
         environment:
             - TZ=UTC
+            - TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL=${EMAIL}
         volumes:
-            #- /var/run/docker.sock:/var/run/docker.sock:ro
             - ./traefik.yml:/traefik.yml:ro
             - ./letsencrypt:/letsencrypt
             - ./config:/config:ro
