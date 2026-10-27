@@ -10,10 +10,12 @@ services:
         ports:
             - '80:80'
             - '443:443'
+        env_file:
+            - .env
         environment:
             - TZ=UTC
         volumes:
-            - /var/run/docker.sock:/var/run/docker.sock:ro
+            #- /var/run/docker.sock:/var/run/docker.sock:ro
             - ./traefik.yml:/traefik.yml:ro
             - ./letsencrypt:/letsencrypt
             - ./config:/config:ro

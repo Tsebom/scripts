@@ -4,8 +4,6 @@ http:
       rule: "Host(`${REMNAWAVE_DOMAIN}`)"
       entrypoints:
         - https
-      middlewares:
-        - remnawave-https-redirect
       tls:
         certResolver: letsencrypt
       service: remnawave
