@@ -182,8 +182,7 @@ chmod 755 /usr/local/bin/auto_update.sh
 chown root:root /usr/local/bin/auto_update.sh
 systemctl enable cron
 systemctl start cron
-crontab -l 2>/dev/null | grep -qxF "0 5 * * 3,6 /usr/local/bin/auto_update.sh" || \
-( crontab -l 2>/dev/null; echo "0 5 * * 3,6 /usr/local/bin/auto_update.sh" ) | crontab -
+{ crontab -l 2>/dev/null | grep -vxF "0 5 * * 3,6 /usr/local/bin/auto_update.sh" || true; echo "0 5 * * 3,6 /usr/local/bin/auto_update.sh"; } | crontab -
 
 # add login_telegram_notify.sh (PAM-версия для Debian)
 cp monitor/login_telegram_notify.sh /usr/local/bin/login_telegram_notify.sh

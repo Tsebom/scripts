@@ -1,6 +1,8 @@
 .idea
 .kilo
 
+.env
+
 /develop
 
 id_rsa.pub
