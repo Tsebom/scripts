@@ -1,20 +1,27 @@
 #!/bin/bash
+# Уведомление о входе в систему
 # Location: /usr/local/bin/login_telegram_notify.sh
-# Add to PAM: /etc/pam.d/sshd (-- session optional pam_exec.so type=open_session /usr/local/bin/login_telegram_notify.sh --)
+# PAM: session optional pam_exec.so type=open_session /usr/local/bin/login_telegram_notify.sh
 
-source /etc/monitor.conf
+set -u
 
-# get username and IP
-USER_NAME=$PAM_USER
-REMOTE_HOST=$PAM_RHOST
+# Загрузка общего модуля
+COMMON_MOD="/etc/monitor/common.sh"
+if [[ -f "$COMMON_MOD" ]]; then
+    source "$COMMON_MOD"
+else
+    exit 1
+fi
 
-LOGIN_TIME=$(date +'%T %a %d %b %Y')
+# Переменные PAM
+USER_NAME="${PAM_USER:-unknown}"
+REMOTE_HOST="${PAM_RHOST:-unknown}"
+SVR_NAME=$(get_hostname)
+TIMESTAMP=$(get_timestamp)
 
-# set the message
-MESSAGE=$(printf "🔐 User %s logged in to the server %s.\n📅 Time:\n%s\n🌐 Host:\n%s" "$USER_NAME" "$HOSTNAME" "$LOGIN_TIME" "$REMOTE_HOST")
+# Формирование сообщения
+MESSAGE=$(printf "🔐 *User %s* logged in to server *%s*\n\n📅 Time: %s\n🌐 Host: %s" \
+    "$USER_NAME" "$SVR_NAME" "$TIMESTAMP" "$REMOTE_HOST")
 
-curl -s -X POST https://api.telegram.org/bot$TOKEN/sendMessage \
-	-d chat_id="$CHAT_ID" \
-	-d text="$MESSAGE" \
-	-d parse_mode="Markdown" \
-	> /dev/null
+# Отправка
+send_telegram "$MESSAGE"
