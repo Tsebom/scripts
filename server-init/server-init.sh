@@ -55,6 +55,21 @@ prompt_input() {
     done
 }
 
+wait_for_apt_lock() {
+    log_info "Проверка блокировок APT..."
+    # Останавливаем службу автоматического обновления, если она запущена
+    systemctl stop unattended-upgrades 2>/dev/null || true
+    
+    while true; do
+        if ! ps aux | grep -v grep | grep -E "apt|dpkg" > /dev/null; then
+            break
+        fi
+        log_warn "APT или DPKG заняты другим процессом (вероятно, автообновление). Ожидание 5 секунд..."
+        sleep 5
+    done
+    log_success "APT разблокирован."
+}
+
 #-------------FUNCTIONS------------------------
 
 check_requirements() {
@@ -169,6 +184,9 @@ EOF
 
 setup_packages() {
     log_info "Обновление системы и установка пакетов..."
+    
+    wait_for_apt_lock
+    
     apt update -y && apt upgrade -y
     
     # Установка из массива
