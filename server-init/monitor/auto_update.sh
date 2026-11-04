@@ -48,7 +48,7 @@ if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
         result_update="Система уже обновлена."
     else
         # Превращаем строку в список с буллитами
-        result_update=$(echo "$result_update" | sed 's/, / \n• /g' | sed 's/^/• /')
+        result_update=$(echo "$result_update" | sed 's/, /\n• /g' | sed '1s/^/• /')
     fi
     
     TEXT=$(printf "✅ *%s* server update succeeded:\n📅 %s\n\n%s" "$SVR_NAME" "$TIMESTAMP" "$result_update")
