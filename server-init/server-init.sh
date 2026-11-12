@@ -94,16 +94,20 @@ setup_hostname() {
     local hostname_regex="^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$"
     local hostname_err="Неверный формат. Допустимы буквы, цифры и '-'. Длина: 2-63 символа."
     
-    local hostname=$(prompt_input "Please choose a hostname" "$hostname_regex" "$hostname_err")
-    
-    hostnamectl set-hostname "$hostname"
+    local new_hostname
+    new_hostname=$(prompt_input "Please choose a hostname" "$hostname_regex" "$hostname_err") || {
+        log_error "Не удалось получить hostname."
+        exit 1
+    }
+
+    hostnamectl set-hostname "$new_hostname"
     
     if grep -qE '^127\.0\.1\.1[[:space:]]+' /etc/hosts; then
-        sed -i -E "s/^127\.0\.1\.1[[:space:]]+.*/127.0.1.1\t$hostname/" /etc/hosts
+        sed -i -E "s/^127\.0\.1\.1[[:space:]]+.*/127.0.1.1\t$new_hostname/" /etc/hosts
     else
-        echo -e "127.0.1.1\t$hostname" >> /etc/hosts
+        echo -e "127.0.1.1\t$new_hostname" >> /etc/hosts
     fi
-    log_success "Hostname установлен: $hostname"
+    log_success "Hostname установлен: $new_hostname"
 }
 
 setup_user() {
