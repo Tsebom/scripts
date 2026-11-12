@@ -267,7 +267,7 @@ sudo wg show
 sudo -u $MY_USER mkdir /home/$MY_USER/upload
 sudo cp -r /etc/wireguard/clients_conf /home/$MY_USER/upload
 
-echo -e "${GREEN}\nДля скачивания файлов конфигурации используйте команду:\n\tscp -rO tsebom@${SERVER_IP}:~/upload/ ~/<DIRECTORY>/${NC}"
+echo -e "${GREEN}\nДля скачивания файлов конфигурации используйте команду:\n\tscp -rO ${MY_USER}@${SERVER_IP}:~/upload/ ~/<DIRECTORY>/${NC}"
 
 
 read -p "Restart server now? [y/N]: " confirm
